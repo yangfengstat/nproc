@@ -1,0 +1,10 @@
+2016-02-21 Yang Feng <yang.feng@columbia.edu> Version 0.2
+        * set random seed to 0 (customizable) for reproducibility in all functions
+	* add implementation of np-roc with pre-specified confidence level with conf parameter
+	* change SVM implementation to use raw scores instead of probability
+        * write a core function for nproc to speed up the process
+	* add functionality of running several classifiers at the same time for nproc
+	* add a plot function for nproc class, which can compare several classifiers
+	* added a vignette for a detailed demo of the package
+	
+	

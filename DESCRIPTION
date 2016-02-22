@@ -1,0 +1,15 @@
+Package: nproc
+Type: Package
+Title: Neyman-Pearson Receiver Operator Curve
+Version: 0.2
+Date: 2016-02-18
+Author: Yang Feng, Jessica Li and Xin Tong
+Maintainer: Yang Feng <yang.feng@columbia.edu>
+Imports: glmnet, e1071, randomForest, MASS, parallel, ada, stats, graphics
+Description: Given a sample of class 0 and class 1 and a classification method, the package generates the corresponding Neyman-Pearson classifier with a pre-specified type-I error control and Neyman-Pearson Receiver Operator Curve.
+License: GPL-2
+LazyData: TRUE
+RoxygenNote: 5.0.1
+Suggests: knitr,
+    rmarkdown
+VignetteBuilder: knitr
