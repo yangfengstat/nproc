@@ -1,3 +1,171 @@
+find.optim.split <- function(x = NULL, y, method = c("logistic", "penlog", "svm", "randomforest", "lda", "slda", "nb", "ada", "tree"), alpha = 0.05, delta = 0.05, split = 1, split.ratio.seq = seq(from=0.1,to=0.9,by=0.1), band  = FALSE, randSeed = 0, ...){
+  if (!is.null(x)) {
+    x = as.matrix(x)
+  }
+  method = match.arg(method)
+  set.seed(randSeed)
+   n = length(y)
+   object = NULL
+   p = ncol(x)
+   ind0 = which(y == 0)  ##indices for class 0
+   ind1 = which(y == 1)  ##indices for class 1
+   n0 = length(ind0)
+   n1 = length(ind1)
+   n1.1 = round(n1 * 0.5)
+   testind = sample(ind1, n1.1)
+   xtrain = x[-testind,]
+   ytrain = y[-testind]
+   xtest = x[testind,]
+   ytest = y[testind]
+   n.split.ratio = length(split.ratio.seq)
+   error = rep(1.1, n.split.ratio)
+   for(split.ind in 1:n.split.ratio){
+     fit = npc(x = xtrain, y = ytrain, method = c("logistic", "penlog", "svm", "randomforest", "lda", "slda", "nb", "ada", "tree"), alpha = 0.05, delta = 0.05, split = 1, split.ratio = split.ratio.seq[split.ind], band  = FALSE, randSeed = 0, ...)
+     if(fit$nsmall==FALSE){
+       pred = predict(fit,xtest)
+       error[split.ind] = mean(pred$pred.label!=ytest)
+     }
+   }
+   optim.split.ratio = split.ratio.seq[which.min(error)]
+   list(optim.split.ratio=optim.split.ratio, error = error)
+}
+
+npc.core <- function(y, score, alpha = NULL, delta = 0.05, n.cores = 1, warning = TRUE) {
+
+  ind0 = which(y == 0)
+  ind1 = which(y == 1)
+  if (length(ind0) == 0 || length(ind1) == 0) {
+    stop("both class 0 and class 1 responses are needed to decide the cutoff.")
+  }
+  sig = mean(score[ind1]) > mean(score[ind0])  ##whether the class 0 has a larger average score than class 1
+  if (sig == FALSE) {
+    score = -score
+  }
+  # loc = bs(1:n0, method = 'bs', alpha, delta, n.cores = n.cores)
+
+  score0 = sort(score[ind0])
+  score1 = sort(score[ind1])
+  obj = find.order(score0, score1, delta, n.cores = n.cores)
+
+  cutoff.list = obj$scores
+
+
+  cutoff = NULL
+  min.alpha = min(obj$alpha.u)
+  nsmall = FALSE
+  if (!is.null(alpha)) {
+    if (min.alpha > alpha + 1e-10){
+      cutoff = Inf
+      loc = length(ind0)
+      nsmall = TRUE
+      if(warning){
+        warning('Sample size is too small for the given alpha. Try a larger alpha.')
+      }
+    } else{
+      loc = min(which(obj$alpha.u <= alpha + 1e-10))
+      cutoff = cutoff.list[loc]
+    }
+  }
+  return(list = list(cutoff = cutoff, loc = loc, sign = sig, alpha.l = obj$alpha.l, alpha.u = obj$alpha.u,
+                     beta.l = obj$beta.l, beta.u = obj$beta.u, nsmall = nsmall))
+}
+
+pred.npc.core <- function(object, newx = NULL) {
+  if (object$method == "logistic") {
+    pred.score = predict(object$fit, data.frame(newx), type = "response")
+  } else if (object$method == "penlog") {
+    pred.score = predict(object$fit$glmnet.fit, newx = newx, type = "response", s = object$fit$lambda.min)
+  } else if (object$method == "svm") {
+    pred.score = attr(predict(object$fit, newx, decision.values = TRUE), "decision.values")[,1]
+  } else if (object$method == "randomforest") {
+    pred.score = predict(object$fit, newx, type = "prob")[, 2]
+  } else if (object$method == "lda") {
+    pred.score = predict(object$fit, data.frame(newx))$posterior[, 2]
+  } else if (object$method == "slda") {
+    pred.score = predict(object$fit$glmnet.fit, newx = newx, s = object$fit$lambda.min)
+  } else if (object$method == "nb") {
+    pred.score = predict(object$fit, data.frame(newx), type = "raw")[, 2]
+  } else if (object$method == "ada") {
+    pred.score = predict(object$fit, data.frame(newx), type = "probs")[, 2]
+  } else if (object$method == 'tree'){
+    pred.score = predict(object$fit, data.frame(newx), type = 'vector')
+  }
+  pred.score = as.vector(pred.score)
+  if (object$sign == FALSE) {
+    pred.score = -pred.score
+  }
+  pred.label = outer(pred.score, object$cutoff, ">")
+  list(pred.label = pred.label, pred.score = pred.score)
+
+}
+
+classification.core <- function(method, train.x, train.y, test.x, ...){
+  if (method == "logistic") {
+    train.data = data.frame(train.x, y = train.y)
+    fit = glm(y ~ ., data = train.data, family = "binomial")
+    test.score = predict(fit, data.frame(test.x), type = "response")
+  } else if (method == "penlog") {
+    fit = cv.glmnet(train.x, train.y, family = "binomial", ...)
+    test.score = predict(fit$glmnet.fit, newx = test.x, type = "response", s = fit$lambda.min)
+    test.score = as.vector(test.score)
+  } else if (method == "svm") {
+    train.y = as.factor(train.y)
+    fit = svm(train.x, train.y, ...)
+    test.score = attr(predict(fit, test.x, decision.values = TRUE), "decision.values")[,1]
+  } else if (method == "randomforest") {
+    train.y = as.factor(train.y)
+    fit = randomForest(train.x, train.y, ...)
+    test.score = predict(fit, test.x, type = "prob")[, 2]
+  } else if (method == "lda") {
+    fit = lda(train.x, train.y)
+    test.score = predict(fit, data.frame(test.x))$posterior[, 2]
+  } else if (method == "slda") {
+    n1 = sum(train.y==1)
+    n0 = sum(train.y==0)
+    n = n1 + n0
+    lda.y = train.y
+    lda.y[train.y == 0] = -n/n0
+    lda.y[train.y == 1] = n/n1
+    fit = cv.glmnet(train.x, lda.y, ...)
+    test.score = predict(fit$glmnet.fit, newx = test.x, type = "response", s =       fit$lambda.min)
+    test.score = as.vector(test.score)
+  } else if (method == "nb") {
+    fit = naiveBayes(train.x, train.y)
+    test.score = predict(fit, data.frame(test.x), type = "raw")[, 2]
+  } else if (method == "ada") {
+    train.data = data.frame(train.x, y = train.y)
+    fit = ada(y ~ ., data = train.data)
+    test.score = predict(fit, data.frame(test.x), type = "probs")[, 2]
+  } else if (method == 'tree') {
+    train.y = as.factor(train.y)
+    train.data = data.frame(train.x, y = train.y)
+    fit = tree(y~ ., data = train.data)
+    test.score = predict(fit, newdata = data.frame(test.x), type = 'vector')
+  }
+  return(list(fit = fit, test.score = test.score))
+}
+
+npc.split <- function(x, y, p, alpha, delta, ind01, ind02, ind11, ind12, method,
+                      n.cores = 1, warning = TRUE, ...) {
+  train.ind = c(ind01, ind11)
+  test.ind = c(ind02, ind12)
+  train.x = x[train.ind, , drop = FALSE]
+  train.y = y[train.ind]
+  test.x = x[test.ind, , drop = FALSE]
+  test.y = y[test.ind]
+  colnames(train.x) = paste("x", 1:p, sep = "")
+  colnames(test.x) = paste("x", 1:p, sep = "")
+  class.obj = classification.core(method, train.x, train.y, test.x, ...)
+  fit = class.obj$fit
+  test.score = class.obj$test.score
+  obj = npc.core(test.y, test.score, alpha = alpha, delta = delta, n.cores = n.cores, warning = warning)
+
+  object = list(fit = fit, y = test.y, score = test.score, cutoff = obj$cutoff,
+                sign = obj$sign, method = method, beta.l = obj$beta.l, beta.u = obj$beta.u, alpha.l = obj$alpha.l,
+                alpha.u = obj$alpha.u, nsmall = obj$nsmall)
+  class(object) = "npc"
+  return(object)
+}
 getroc <- function(yhat, y) {
   TPR = apply(yhat, 2, f <- function(x) {
     sum((x == y) & (y == 1))/sum(y == 1)
@@ -8,87 +176,80 @@ getroc <- function(yhat, y) {
   cbind(FPR, TPR)
 }
 
-get.vio <- function(roc.th, roc.em, nproc.em, alphalist) {
-  alphaall = sort(c(roc.th[, 1], roc.em[, 1]))
-  t1 = approx(roc.th[, 1], roc.th[, 2], alphaall, rule = 2)$y
-  t2 = approx(roc.em[, 1], roc.em[, 2], alphaall, rule = 2)$y
-  loc = which(t2 > t1)
-  vio1 = sum(diff(alphaall)[loc[loc < length(alphaall)]])
-  alphaall2 = sort(c(roc.th[, 1], alphalist))
-  t3 = approx(roc.th[, 1], roc.th[, 2], alphaall2, rule = 2)$y
-  t4 = approx(alphalist, nproc.em[, 2], alphaall2, rule = 2)$y
-  loc = which(t4 > t3)
-  vio2 = sum(diff(alphaall)[loc[loc < length(alphaall2)]])
-  return(c(vio1, vio2))
-}
-
-getalpha <- function(roc1, roc2) {
-  alphaall = sort(c(roc1[, 1], roc2[, 1]))
-  t1 = approx(roc1[, 1], roc1[, 2], alphaall, rule = 2)$y
-  t2 = approx(roc2[, 1], roc2[, 2], alphaall, rule = 2)$y
-  alphaall[which.min(diff(sign(t1 - t2) != 0)) + 1]
-}
 
 
 
 
 
+## find the order such that the type-I error bound is satisfied with probability at
+## least 1-delta
+find.order <- function(score0, score1 = NULL, delta = 0.05, n.cores = 1) {
+  ##score0 contains all the candidate cutoffs for the classifier.
+
+  score0 = sort(score0)
+  score1 = sort(score1)
+  n0 = length(score0)
+  n1 = length(score1)
+  if(length(unique(score0))<10) { ##add small random noise if too few unique values.
+    sd0 = sd(score0)
+    sd1 = sd(score1)
+    score0 = score0 + rnorm(n0, sd = max(1, sd0)*1e-6)
+    score1 = score1 + rnorm(n1, sd = max(1, sd1)*1e-6)
+  }
+  scores = score0
+  alpha.l = alpha.u = beta.l = beta.u = rep(0, n0)
+  #alpha.l: type I error lower bound
+  #alpha.u: type I error upper bound
+  #beta.l: type II error lower bound
+  #beta.u: type II error upper bound
+  v.list = seq(from = 0, to = 1, by = 0.001)
+  #ru0 = mcmapply(function(s){sum(score0 <= s)}, scores, mc.cores = n.cores)
+  #rl0 = n0 + 1 - mcmapply(function(s){sum(score0 >= s)}, scores, mc.cores = n.cores)
+  ru0 = rank(score0, ties.method = 'max')
+  rl0 = rank(score0, ties.method = 'min')
+  rl1 = mcmapply(function(s){sum(score1 < s) + s %in% score1 }, scores, mc.cores = n.cores)
+  ru1 = mcmapply(function(s){sum(score1 < s) + max(1,sum(score1 == s)) }, scores, mc.cores = n.cores)
 
 
-
-
-## try replace bootstrap with subsampling interpolation
-bs <- function(prob, method = c("bs", "ss"), alpha = c(0.01, 0.05), delta = 0.05,
-               B = 1000, n.cores = 1) {
-  ### prob: probability of assigning to 1 method: bs: boostrap, ss: subsampling n/2
-  ### of n alpha: a vector of type-I error delta: violation rate control B: number of
-  ### bootstraps set.seed(0)
-  n = length(prob)
-  cutoff.list = as.vector(sort(prob))
-  if (method == "bs") {
-    cutoff.bs = matrix(cutoff.list[sample(x = 1:n, size = n * B, replace = TRUE)],
-                       ncol = B)  # store the bootstrapped lr.Hat into a matrix. Every column is a bootstrap sample
-  } else if (method == "ss") {
-    cutoff.bs = matrix(0, round(n/2), B)
-    for (i in 1:B) {
-      cutoff.bs[, i] = cutoff.list[sample(1:n, size = round(n/2), replace = FALSE)]
+  alpha.mat = mcmapply(f <- function(i){
+    if (ru0[i] == n0){
+      alpha.l = 0
+    }  else {
+      alpha.l = v.list[max(which(pbinom(n0 - rl0[i], n0, v.list) >= 1 - delta))]
     }
-  }
-  if (n.cores > 1) {
-    percents <- mcmapply(cutoff.list, FUN = function(cutoff) {
-      # for every possible cutoff, find the percentage of empirical type I errors >
-      # alpha
-      temp1 = cutoff.bs - cutoff
-      temp2 = matrix(as.numeric(temp1 > 0), ncol = B)
-      temp3 = colSums(temp2)/n
-      apply(outer(temp3, alpha, ">"), 2, sum)/B
-    }, mc.cores = n.cores)
-  } else {
-    percents <- sapply(cutoff.list, FUN = function(cutoff) {
-      # for every possible cutoff, find the percentage of empirical type I errors >
-      # alpha
-      temp1 = cutoff.bs - cutoff
-      temp2 = matrix(as.numeric(temp1 > 0), ncol = B)
-      temp3 = colSums(temp2)/n
-      apply(outer(temp3, alpha, ">"), 2, sum)/B
-    })
-  }
+    alpha.u = v.list[min(which(pbinom(n0 - ru0[i], n0, v.list) <= delta))]
 
-  if (is.matrix(percents) == FALSE) {
-    percents = matrix(percents, 1, length(percents))
-  }
-  ind1vec = apply(percents, 1, f <- function(x) {
-    min(which(x <= delta))
-  })
-  #ind2vec = apply(percents, 1, f <- function(x) {
-  #  max(which(x > delta))
-  #})
-  w1 = abs(percents[ind1vec] - delta)
-  #w2 = abs(percents[ind2vec] - delta)
-  # cutoff = (w1* cutoff.list[ind2] + w2* cutoff.list[ind1])/(w1+w2)
+    # if (ru0[i] == 0) {
+    #   alpha.u = 1
+    #   alpha.l = v.list[max(which(pbinom(n0 - rl0[i], n0, v.list) >= 1 - delta))]
+    # } else if (rl0[i] == n0) {
+    #   alpha.l = 0
+    #   alpha.u = v.list[min(which(pbinom(n0 - ru0[i], n0, v.list) <= delta))]
+    # } else {
+    #   alpha.u = v.list[min(which(pbinom(n0 - ru0[i], n0, v.list) <= delta))]
+    #   alpha.l = v.list[max(which(pbinom(n0 - rl0[i], n0, v.list) >= 1 - delta))]
+    # }
+     if (ru1[i] >= n1) {
+      beta.u = 1
+      beta.l = v.list[max(which(pbinom(rl1[i]-1, n1, v.list) >= 1 - delta))]
+    } else if (rl1[i] == 0) {
+      beta.u = v.list[min(which(pbinom(ru1[i]-1, n1, v.list) <= delta))]
+      beta.l = 0
+    } else {
+      beta.u = v.list[min(which(pbinom(ru1[i]-1, n1, v.list) <= delta))]
+      beta.l = v.list[max(which(pbinom(rl1[i]-1, n1, v.list) >= 1 - delta))]
+    }
+    c(alpha.l, alpha.u, beta.l, beta.u)
+  }, 1:n0, mc.cores = n.cores)
+  alpha.l = alpha.mat[1, ]
+  alpha.u = alpha.mat[2, ]
+  beta.l = alpha.mat[3, ]
+  beta.u = alpha.mat[4, ]
 
-  cutoff = cutoff.list[ind1vec]
 
-  return(cutoff)
+  return(list(scores = scores, beta.l = beta.l, beta.u = beta.u, alpha.l = alpha.l, alpha.u = alpha.u, ru1=ru1,rl1=rl1,ru0=ru0,rl0=rl0))
 
 }
+
+
+

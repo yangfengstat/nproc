@@ -1,28 +1,30 @@
 ---
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 <a id="top"></a>
 
 ---
 title: "A demonstration of the nproc package"
-author: "Yang Feng, Jessica Li and Xin Tong"
+author: "Yang Feng, Jingyi Jessica Li and Xin Tong"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{nproc demo}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-We provide a detailed demo of the usage for `nproc` package. 
+We provide a detailed demo of the usage for the \verb+nproc+ package. 
 
 > [Introduction](#intro)
 
-> [Installation and Package Load](#install)
+> [Installation and Package Loading](#install)
 
-> [Neyman-Pearson Classification](#npc)
+> [Neyman-Pearson Classifier](#npc)
 
-> [Neyman-Pearson Receiver Operator Curve](#nproc)
+> [Neyman-Pearson Receiver Operator Characteristic Band](#nproc)
 
 <a id="intro"></a>
 
@@ -40,23 +42,25 @@ $R_0(\phi)=P(\phi(X)\neq Y|Y=0)$ denotes the type I error, and $R_1(\phi)=P(\phi
 The classical classification paradigm aims to find an  oracle classifier $\phi^*$ by minimizing the risk, $\phi^*=\arg\min_{\phi}R(\phi)$.
 
 In contrast, the NP classification paradigm aims to mimic the NP oracle classifier ${\phi}^*_\alpha$ with respect to a pre-specified type I error upper bound $\alpha$, 
-$\phi^*_\alpha=\arg\min_{\phi:~R_0(\phi)\leq\alpha}R_1(\phi)$, where $\alpha$ reflects users' conservative attitude (priority) towards the type I error. 
+$\phi^*_\alpha=\arg\min_{\phi:~R_0(\phi)\leq\alpha}R_1(\phi)$, where $\alpha$ reflects users' conservative attitude (priority) towards the type I error. In practice, since we do not know the class distirbution, we do not expect to enforce that the type I error is bounded from above strictly; instead, we wish the type I error is bounded by $\alpha$ with probability at least $1-\delta$, where $\delta\in(0,1)$ is another user-specified hyper-parameter.  
 
-<a id="install"></a>
+The \verb+nproc+ package provides two essential tools for NP classification: i). a function \verb+npc+ that adapts popular classification algorithms, such as linear discriminant analysis, logistic regression, support vector machines and random forrests to the NP paradigm; and ii) a function \verb+nproc+ that constructs NP-ROC bands, an alternative to the popular ROC curves, that allows visualization and comparison of NP classifiers.   
 
-[Back to Top](#top)
 
-## Installation and Package Load
+
+
+
+## Installation and Package Loading
  
-Like many other R packages, the simplest way to obtain `nproc` is to install it directly from CRAN. Type the following command in R console:
+The simplest way to obtain the \verb+nproc+ package is to install it directly from CRAN. Type the following command in R console:
 
 ```{r, eval=FALSE}
 install.packages("nproc", repos = "http://cran.us.r-project.org")
 ```
 
-Users may change the `repos` options depending on their locations and preferences. Other options such as the directories where to install the packages can be altered in the command. For more details, see `help(install.packages)`.
+Users may change the `repos` options depending on their locations and preferences. Other options such as the directories to which we want to install the packages can be altered in the command. For more details, see `help(install.packages)`.
 
-Here the R package has been downloaded and installed to the default directories.
+Here the \verb+nproc+  package has been downloaded and installed to the default directories.
 
 Alternatively, users can download the package source at http://cran.r-project.org/web/packages/nproc/index.html and type Unix commands to install it to the desired location.
 
@@ -65,13 +69,15 @@ Then we can load the `nproc` package:
 ```{r}
 library(nproc)
 ```
-[Back to Top](#top)
+
 
 <a id="npc"></a>
 
-## Neyman-Pearson Classification
+## Neyman-Pearson Classifier
 
-Here, we provide a demonstration of Neyman-Pearson Classification with a type-I error control. In the first step, we create a dataset (x,y) from a logistic regression model with 2 features and sample size 1000. 
+Here, we demonstrate how to construct a Neyman-Pearson classifier when a user has priority to control the type I error. Note that a user can also control the type II error under specific levels by switching the class labels and applying the npc function.   
+
+In the first step, we create a dataset (x,y) from a logistic regression model with 2 features and sample size 1000. 
 ```{r}
 n = 1000
 set.seed(0)
@@ -87,19 +93,19 @@ points(x[y==0,],col=2,pch=2)
 legend("topright",legend=c('Class 1','Class 0'),col=1:2,pch=c(1,2))
 ```
 
-Then, the `npc` function can be called to perform the Neyman-Pearson Classification (npc). If one would like to use Linear Discriminant Analysis as the classifier, we can set `method` = "lda". The default type I error control is `alpha=0.05`. The `alpha` value can be changed to any desirable type I error upper bound in $(0,1)$. 
+Then, we call the `npc` function to construct Neyman-Pearson classifiers. Suppose we want to use linear discriminant analysis, we set `method` = "lda". The default type I error upper bound is `alpha=0.05`, while the `alpha` value can be changed to any user specified value in $(0,1)$. The tolerance upper bound $\delta$ also has the default value at $0.05$.
 
 ```{r}
 fit = npc(x, y, method = "lda", alpha = 0.05)
 ```
-We can now evaluate the prediction performance of the NP classifier on a test set (xtest, ytest) generated as follows. 
+We can now evaluate the prediction performance of the NP classifier `fit` on a test set (xtest, ytest) generated as follows. 
 
 ```{r}
 xtest = matrix(rnorm(n*2),n,2)
 ctest = 1+3*xtest[,1]
 ytest = rbinom(n,1,1/(1+exp(-ctest)))
 ```
-We calculate the overall accuracy of the classifier as well as the realized Type I error. It is shown that the Type I error is smaller than `alpha`. 
+We calculate the overall accuracy of the classifier as well as the realized type I error on test data. It is shown that the type I error is smaller than `alpha`.Strictly speaking, to demonstrate the effectiveness of the `fit` classifier under the NP paradigm, we should repeat this experiment many times, and show that in $1-\delta$ of these repetitions, type I error (approximated by empirical type I error on a large test data set) is smaller than `alpha`. 
 ```{r}
 pred = predict(fit,xtest)
 fit.score = predict(fit,x)
@@ -109,7 +115,7 @@ ind0 = which(ytest==0)
 typeI = mean(pred$pred.label[ind0]!=ytest[ind0]) #type I error on test set
 cat('Type I error: ', typeI, '\n')
 ```
-The classification method implemented in the npc function includes the following options.
+The base classification method implemented in the `npc` function includes the following options.
 
 - logistic: Logistic regression. `glm` function with family = 'binomial'
 - penlog: Penalized logistic regression with LASSO penalty. `glmnet` in `glmnet` package
@@ -118,28 +124,37 @@ The classification method implemented in the npc function includes the following
 - lda: Linear Discriminant Analysis. `lda` in `MASS` package
 - nb: Naive Bayes. `naiveBayes` in `e1071` package
 - ada: Ada-Boost. `ada` in `ada` package
-- custom: a custom classifier
 
-Now, we can try the change the method to logistic regression and change `alpha` to 0.1. 
+Now, we can  change the classification method of choice to logistic regression and change `alpha` to 0.1. 
 
 ```{r}
 fit = npc(x, y, method = "logistic", alpha = 0.1)
 pred = predict(fit,xtest)
-accuracy = mean(pred$pred.label==ytest)
+accuracy = mean(pred$pred.label == ytest)
 cat("Overall Accuracy: ",  accuracy,'\n')
-ind0 = which(ytest==0)
-typeI = mean(pred$pred.label[ind0]!=ytest[ind0]) #type I error on test set
+ind0 = which(ytest == 0)
+typeI = mean(pred$pred.label[ind0] != ytest[ind0]) #type I error on test set
 cat('Type I error: ', typeI, '\n')
 ```
 
-Let's see the performance of this dataset using all implemented methods as a comparison. 
+To construct each NP classifier, `npc` function randomly splits class $0$ sample into two equal halves; the first half, together with the class $1$ sample, is used to train the base classification method, and the second half is reserved to find the threshold on the scores. To increase stability,  the `nproc` package provides implementation of ensembled classifiers, which are majority votes of the NP classifiers constructed from different sample splitting. The parameter value `split` is the number of random splits. In the following codes, we change its number to $11$.
+
 ```{r}
-methodlist = c("logistic", "penlog", "svm", "randomforest",
+fit = npc(x, y, method = "logistic", alpha = 0.1, split = 11)
+pred = predict(fit,xtest)
+accuracy = mean(pred$pred.label == ytest)
+cat("Overall Accuracy: ",  accuracy,'\n')
+ind0 = which(ytest == 0)
+typeI = mean(pred$pred.label[ind0] != ytest[ind0]) #type I error on test set
+cat('Type I error: ', typeI, '\n')
+```
+
+Let's compare the performance of different methods on our simulated dataset. 
+```{r}
+methodlist = c("logistic", "penlog", "randomforest", "svm", 
                                         "lda", "nb", "ada")
-loc.prob = NULL
 for(method in methodlist){
-fit = npc(x, y, method = method, alpha = 0.05, loc.prob = loc.prob)
-loc.prob = fit$loc.prob #Recycle the loc.prob from the fit to same time for the next fit
+fit = npc(x, y, method = method, alpha = 0.05)
 pred = predict(fit,xtest)
 accuracy = mean(pred$pred.label==ytest)
 cat(method, ': Overall Accuracy: ',  accuracy,'\n')
@@ -150,43 +165,47 @@ cat(method, ': Type I error: ', typeI, '\n')
 
 ```
 
-The package also implmented a generic classifier with the scores on each observation needed. An example is follows. 
-
-```{r}
-fit2 = npc(y = y, score = fit.score$pred.score,
-pred.score = pred$pred.score, loc.prob = loc.prob, method = 'custom')
-```
 [Back to Top](#top)
 <a id="nproc"></a>
 
-## Neyman-Pearson Receiver Operator Curve
+## Neyman-Pearson Receiver Operator Characteristic (NP-ROC) Band
 
-The package provides an implmentation of Neyman-Pearson Receiver Operator Curve (nproc) via the function `nproc`. Here is a brief demo. We use the same data in the NP classifier, i.e., a dataset (x,y) from a logistic regression model with 2 features and sample size 1000. Then, we can call the `nproc` function with a specificed classifier. 
+The function  `nproc` constructs Neyman-Pearson Receiver Operator Characteristic  (NP-ROC) band for an NP classifier. When we plot an NP-ROC band, the horizontal axis is the `alpha` value, and the vertical axis is the type II error conditioning on training data.  When we section the band vertically at each `alpha` value, the lower point on the segment is a high probability lower bound of the (1-type II error) of the NP classifier corresponding to that `alpha` value, and the the upper point on the segment is a high probability upper bound of the (1-type II error) of the NP classifier corresponding to that `alpha` value.
+
+
+In the following demo, we use the same data as in the previous section. 
 
 ```{r}
-fit = nproc(x, y, method = "svm", loc.prob.lo = loc.prob)
+fit = nproc(x, y, method = "nb")
 plot(fit)
 ```
 
-The implementation with linear discriminant analysis is as follows. 
+Note that, to create an NP-ROC band, there is no need to construct an NP classifier using the `npc` function first.  
+
+When we choose linear discriminant analysis as the base method, we do as follows. 
 
 ```{r}
-fit = nproc(x, y, method = "lda", loc.prob.lo = loc.prob, n.cores = 2)
-plot(fit)
+fit2 = nproc(x, y, method = "lda")
+plot(fit2)
 ```
 
-Another important usage of the package is to create a point-wise confidence interval of ROC curves with a given tolerance probability `delta`. The default `delta = 0.05` corresponds to the 95% point-wise confidence interval. Here is one example.
+The `compare` function compares two NP classifiers at different $\alpha$ values (their $\delta$ values have to be the same) by inespecting their NP-ROC bands. The following code displayes the NP-ROC bands generated by logistic regression with the two predictors. The region marked in red is the `alpha` range in which the second NP classifier dominates the first, and the black region means otherwise. The uncolored region means we cannot claim supriority of one or the other with confidence.    
 
 ```{r}
-fit = nproc(x, y, method = "logistic", conf = TRUE)
-plot(fit)
+n = 1000
+set.seed(0)
+x1 = c(rnorm(n), rnorm(n) + 1)
+x2 = c(rnorm(n), rnorm(n)*sqrt(6) + 1)
+y = c(rep(0,n), rep(1,n))
+fit1 = nproc(x1, y, split = 11, method = 'lda')
+fit2 = nproc(x2, y, split = 11, method = 'lda')
+v = compare(fit1, fit2)
+legend('topleft',legend = c(expression(X[1]),expression(X[2])),col = 1:2,lty = c(1,1))
 ```
 
-The package provides efficient computation of NP ROC curves using several different classifiers. The following compares SVM, logistic regression and linear discriminant analysis with the 95% point-wise confidence interval. It is clear from the graph that logistic regression and linear discriminant analysis perform similarly and are better than SVM. 
-
-```{r}
-fit = nproc(x, y, method = c('svm','logistic','lda'), conf = T)
-plot(fit)
+Lastly, we have implemented a web-based interface using the shiny app. It can be invoked by the following command after the package is loaded. 
+```{eval = FALSE}
+shiny::runApp(system.file('nproc', package='nproc'))
 ```
 
 [Back to Top](#top)

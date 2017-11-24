@@ -1,15 +1,49 @@
 Package: nproc
 Type: Package
-Title: Neyman-Pearson Receiver Operator Curve
-Version: 0.2
-Date: 2016-02-18
-Author: Yang Feng, Jessica Li and Xin Tong
+Title: Neyman-Pearson (NP) Classification Algorithms and NP Receiver Operating
+    Characteristic (NP-ROC) Curves
+Version: 2.1.1
+Date: 2017-11-06
+Author: Yang Feng, Jingyi Jessica Li and Xin Tong
 Maintainer: Yang Feng <yang.feng@columbia.edu>
-Imports: glmnet, e1071, randomForest, MASS, parallel, ada, stats, graphics
-Description: Given a sample of class 0 and class 1 and a classification method, the package generates the corresponding Neyman-Pearson classifier with a pre-specified type-I error control and Neyman-Pearson Receiver Operator Curve.
+Imports:
+    glmnet,
+    e1071,
+    randomForest,
+    MASS,
+    parallel,
+    ada,
+    stats,
+    graphics,
+    ROCR,
+    tree
+Description: In many binary classification applications, such as disease
+    diagnosis and spam detection, practitioners commonly face the need to limit
+    type I error (i.e., the conditional probability of misclassifying a class 0
+    observation as class 1) so that it remains below a desired threshold. To address
+    this need, the Neyman-Pearson (NP) classification paradigm is a natural choice;
+    it minimizes type II error (i.e., the conditional probability of misclassifying
+    a class 1 observation as class 0) while enforcing an upper bound, alpha, on the
+    type I error. Although the NP paradigm has a century-long history in hypothesis
+    testing, it has not been well recognized and implemented in classification
+    schemes. Common practices that directly limit the empirical type I error to
+    no more than alpha do not satisfy the type I error control objective because
+    the resulting classifiers are still likely to have type I errors much larger
+    than alpha. As a result, the NP paradigm has not been properly implemented
+    for many classification scenarios in practice. In this work, we develop the
+    first umbrella algorithm that implements the NP paradigm for all scoring-type
+    classification methods, including popular methods such as logistic regression,
+    support vector machines and random forests. Powered by this umbrella algorithm,
+    we propose a novel graphical tool for NP classification methods: NP receiver
+    operating characteristic (NP-ROC) bands, motivated by the popular receiver
+    operating characteristic (ROC) curves. NP-ROC bands will help choose in a data
+    adaptive way and compare different NP classifiers. The paper is available at
+    <arXiv:1608.03109>.
 License: GPL-2
 LazyData: TRUE
-RoxygenNote: 5.0.1
-Suggests: knitr,
+RoxygenNote: 6.0.1
+URL: http://arxiv.org/abs/1608.03109
+Suggests:
+    knitr,
     rmarkdown
 VignetteBuilder: knitr

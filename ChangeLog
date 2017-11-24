@@ -1,3 +1,53 @@
+2017-09-23 Yang Feng <yang.feng@columbia.edu> Version 2.1
+*change the option of shiny for split numbers
+2017-09-16 Yang Feng <yang.feng@columbia.edu> Version 2.0.9
+*speed up the calculation for order statistics
+*minor changes on plot legends and line width
+2017-08-17 Yang Feng <yang.feng@columbia.edu> Version 2.0.8
+*remove the custom option
+*remove the nproc line, only keeps the band version
+2017-02-13 Yang Feng <yang.feng@columbia.edu> Version 2.0.6
+*add implementation for roc with cross-validation
+2017-01-18 Yang Feng <yang.feng@columbia.edu> Version 2.0.5
+ *pass additional arguments to different classifiers via …
+2017-01-11 Yang Feng <yang.feng@columbia.edu> Version 2.0.4
+  *improve the memory use for the outer function in find.order function
+2016-09-18 Yang Feng <yang.feng@columbia.edu> Version 2.0.1
+  *using only the cutoffs from class 0 to create the NP-ROC band to match the theory.
+2016-09-14 Yang Feng <yang.feng@columbia.edu> Version 2.0
+ *change the implementation of the interpolation for ROC confidence band by using a piecewise constant function to approximate the upper and lower bounds.
+  *using all the possible cutoff from class 1 and class 0 to create the NP-ROC band.
+2016-09-08 Yang Feng <yang.feng@columbia.edu> Version 1.9
+  *change the implementation of the npc. In particular, originally, we are looking for the order statistic that satisfies the type I error upper bound with high-probability. Now, we investigate all possible cutoffs and evaluate its corresponding upper and lower bounds of type I and type II errors. This way, we do not need to impose the minimal sample size requirement.
+  *change the implementation of the ROC confidence band, here, the lower bound represents the upper bounds of type I error and 1-upper bounds of type II error. The upper bound represents the lower bounds of type I error and 1-lower bounds of type II error. Upon this revision, the comparison between two methods is more reasonable and has theoretical support.
+2016-08-22 Yang Feng <yang.feng@columbia.edu> Version 1.4
+	*add the comparison between two NP-ROC curves
+2016-08-15 Yang Feng <yang.feng@columbia.edu> Version 1.3
+	*fix the errors when the input x is a vector
+2016-08-08 Yang Feng <yang.feng@columbia.edu> Version 1.2
+	*change the package title
+	*add the reference to the nproc paper in arxiv
+2016-05-22 Yang Feng <yang.feng@columbia.edu> Version 1.0
+	*format the codes
+	*implement the adaptive split scheme, by dividing the alphalist into three regions
+	*change the custom method, into using all class 0 samples for determine the cutoff
+	*add options for the split proportion, whether to split adaptively
+	*change plot function to use dashed line if adaptive is TRUE for the small sample
+size region.
+2016-05-18 Yang Feng <yang.feng@columbia.edu> Version 0.8
+	*try out the implementation with adaptive choice of sample size for the order statistics
+	*change the order statistics selection using the exact formula
+2016-05-14 Yang Feng <yang.feng@columbia.edu> Version 0.7
+	*change the parallel computing schedule to multiple splits
+2016-05-13 Yang Feng <yang.feng@columbia.edu> Version 0.6
+	*change the bootstrap calculation to an explicit formula. The algorithm is more efficient now.
+	*change the starting point of the ROC curve to the alpha value for which it is possible to control the type I error with probability 1-delta
+2016-05-08 Yang Feng <yang.feng@columbia.edu> Version 0.5
+	*change the mc.cores=1 in the Vignettes to be compatible with windows.
+2016-04-18 Yang Feng <yang.feng@columbia.edu> Version 0.4
+	*change the default alphalist range.
+2016-03-06 Yang Feng <yang.feng@columbia.edu> Version 0.3
+	*add ensemble implementation for npc, nproc.
 2016-02-21 Yang Feng <yang.feng@columbia.edu> Version 0.2
         * set random seed to 0 (customizable) for reproducibility in all functions
 	* add implementation of np-roc with pre-specified confidence level with conf parameter
@@ -6,5 +56,5 @@
 	* add functionality of running several classifiers at the same time for nproc
 	* add a plot function for nproc class, which can compare several classifiers
 	* added a vignette for a detailed demo of the package
-	
-	
+
+
