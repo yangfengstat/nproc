@@ -32,6 +32,7 @@ xtest = matrix(rnorm(n*2),n,2)
 ctest = 1+3*xtest[,1]
 ytest = rbinom(n,1,1/(1+exp(-ctest)))
 
+
 \dontrun{
 ##Use logistic classifier and the default type I error control with alpha=0.05
 fit = npc(x, y, method = 'logistic')

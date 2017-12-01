@@ -1,4 +1,4 @@
-find.optim.split <- function(x = NULL, y, method = c("logistic", "penlog", "svm", "randomforest", "lda", "slda", "nb", "ada", "tree"), alpha = 0.05, delta = 0.05, split = 1, split.ratio.seq = seq(from=0.1,to=0.9,by=0.1), band  = FALSE, randSeed = 0, ...){
+find.optim.split <- function(x = NULL, y, method = c("logistic", "penlog", "svm", "randomforest", "lda", "slda", "nb", "ada", "tree"), alpha = 0.05, delta = 0.05, split = 1, split.ratio.seq = seq(from=0.1,to=0.9,by=0.1), nfolds = 10, band  = FALSE, randSeed = 0, ...){
   if (!is.null(x)) {
     x = as.matrix(x)
   }
@@ -11,22 +11,32 @@ find.optim.split <- function(x = NULL, y, method = c("logistic", "penlog", "svm"
    ind1 = which(y == 1)  ##indices for class 1
    n0 = length(ind0)
    n1 = length(ind1)
-   n1.1 = round(n1 * 0.5)
-   testind = sample(ind1, n1.1)
-   xtrain = x[-testind,]
-   ytrain = y[-testind]
-   xtest = x[testind,]
-   ytest = y[testind]
+
+   foldid = sample(rep(seq(nfolds), length = n1))
+
    n.split.ratio = length(split.ratio.seq)
-   error = rep(1.1, n.split.ratio)
+
+   error = matrix(1.1, n.split.ratio,nfolds)
+   for(i in 1:nfolds){
+     which = foldid == i
+
+     testind = ind1[which]
+     xtrain = x[-testind,]
+     ytrain = y[-testind]
+     xtest = x[testind,]
+     ytest = y[testind]
+
    for(split.ind in 1:n.split.ratio){
-     fit = npc(x = xtrain, y = ytrain, method = c("logistic", "penlog", "svm", "randomforest", "lda", "slda", "nb", "ada", "tree"), alpha = 0.05, delta = 0.05, split = 1, split.ratio = split.ratio.seq[split.ind], band  = FALSE, randSeed = 0, ...)
+     fit = npc(x = xtrain, y = ytrain, method = method, alpha = alpha, delta = delta, split = split, split.ratio = split.ratio.seq[split.ind], band  = band, randSeed = randSeed, ...)
      if(fit$nsmall==FALSE){
        pred = predict(fit,xtest)
-       error[split.ind] = mean(pred$pred.label!=ytest)
+       error[split.ind, i] = mean(pred$pred.label!=ytest)
      }
    }
-   optim.split.ratio = split.ratio.seq[which.min(error)]
+
+   }
+   errorm = apply(error,1,mean)
+   optim.split.ratio = split.ratio.seq[which.min(errorm)]
    list(optim.split.ratio=optim.split.ratio, error = error)
 }
 
@@ -51,7 +61,8 @@ npc.core <- function(y, score, alpha = NULL, delta = 0.05, n.cores = 1, warning 
 
 
   cutoff = NULL
-  min.alpha = min(obj$alpha.u)
+  alpha.n = length(obj$alpha.u)
+  min.alpha = sort(obj$alpha.u,partial=2)[2]
   nsmall = FALSE
   if (!is.null(alpha)) {
     if (min.alpha > alpha + 1e-10){
@@ -127,7 +138,7 @@ classification.core <- function(method, train.x, train.y, test.x, ...){
     lda.y[train.y == 0] = -n/n0
     lda.y[train.y == 1] = n/n1
     fit = cv.glmnet(train.x, lda.y, ...)
-    test.score = predict(fit$glmnet.fit, newx = test.x, type = "response", s =       fit$lambda.min)
+    test.score = predict(fit$glmnet.fit, newx = test.x, type = "link", s =       fit$lambda.min)
     test.score = as.vector(test.score)
   } else if (method == "nb") {
     fit = naiveBayes(train.x, train.y)

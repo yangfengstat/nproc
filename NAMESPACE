@@ -3,6 +3,8 @@
 S3method(lines,nproc)
 S3method(plot,nproc)
 S3method(predict,npc)
+S3method(print,npc)
+S3method(print,nproc)
 export(compare)
 export(npc)
 export(nproc)
