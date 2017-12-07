@@ -41,7 +41,7 @@ Description: In many binary classification applications, such as disease
     <arXiv:1608.03109>.
 License: GPL-2
 LazyData: TRUE
-RoxygenNote: 6.0.1
+RoxygenNote: 5.0.1
 URL: http://arxiv.org/abs/1608.03109
 Suggests:
     knitr,

@@ -25,3 +25,4 @@ plot(fit)
 \seealso{
 \code{\link{npc}}, \code{\link{nproc}}
 }
+

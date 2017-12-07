@@ -27,3 +27,4 @@ lines(fit2, col = 2)
 \seealso{
 \code{\link{npc}}, \code{\link{nproc}} and \code{\link{plot.nproc}}.
 }
+
