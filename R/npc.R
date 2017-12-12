@@ -175,5 +175,6 @@ npc <- function(x = NULL, y, method = c("logistic", "penlog", "svm", "randomfore
         object$nsmall = fits[[1]]$nsmall
         object$split.ratio = split.ratio
         class(object) = "npc"
+        rm(.Random.seed, envir=.GlobalEnv)
         return(object)
 }

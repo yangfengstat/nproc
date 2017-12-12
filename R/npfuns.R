@@ -38,12 +38,13 @@ find.optim.split <- function(x = NULL, y, method = c("logistic", "penlog", "svm"
    errorm = apply(error,1,mean)
    errorse = apply(error,1,sd)/sqrt(nfolds)
    loc.min = which.min(errorm)
-   locs = which(errorm<errorm[loc.min]+errorse[loc.min])
+   locs = which(errorm<errorm[loc.min]+2*errorse[loc.min])
    loc.1se = locs[which.min(abs(split.ratio.seq[locs]-0.5))]
    #loc.1se = min(which(errorm==max(errorm[locs])))
    split.ratio.min = split.ratio.seq[loc.min]
    split.ratio.1se = split.ratio.seq[loc.1se]
    #optim.split.ratio = split.ratio.seq[which.min(errorm)]
+   rm(.Random.seed, envir=.GlobalEnv)
    list(split.ratio.min=split.ratio.min, split.ratio.1se = split.ratio.1se, error = error, errorse = errorse)
 }
 

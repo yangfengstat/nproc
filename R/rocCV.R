@@ -86,5 +86,6 @@ rocCV <- function(x = NULL, y, method = c("logistic", "penlog", "svm", "randomfo
     roc.cv.fpr = common.fpr.list
 
     object = list(fpr = roc.cv.fpr, tpr = roc.cv.tpr)
+    rm(.Random.seed, envir=.GlobalEnv)
     return(object)
 }

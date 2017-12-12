@@ -111,5 +111,6 @@ nproc <- function(x = NULL, y, method = c("logistic", "penlog", "svm", "randomfo
 
     object = list(typeII.u = beta.u.m, typeII.l = beta.l.m, auc.l = auc.l, auc.u = auc.u, method = method, typeI.u = alphalist, delta = delta, v = v)
     class(object) = "nproc"
+    rm(.Random.seed, envir=.GlobalEnv)
     return(object)
 }
