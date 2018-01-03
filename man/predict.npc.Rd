@@ -51,4 +51,3 @@ cat('Type II error: ', typeII, '\\n')
 \seealso{
 \code{\link{npc}} and \code{\link{nproc}}
 }
-

@@ -59,4 +59,3 @@ Xin Tong, Yang Feng, and Jingyi Jessica Li (2016), Neyman-Pearson (NP) classific
 \seealso{
 \code{\link{nproc}}
 }
-

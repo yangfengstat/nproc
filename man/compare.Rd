@@ -44,4 +44,3 @@ Xin Tong, Yang Feng, and Jingyi Jessica Li (2016), Neyman-Pearson (NP) classific
 \seealso{
 \code{\link{npc}}, \code{\link{nproc}}, \code{\link{predict.npc}} and \code{\link{plot.nproc}}
 }
-

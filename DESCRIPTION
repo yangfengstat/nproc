@@ -3,7 +3,7 @@ Type: Package
 Title: Neyman-Pearson (NP) Classification Algorithms and NP Receiver Operating
     Characteristic (NP-ROC) Curves
 Version: 2.1.1
-Date: 2017-11-06
+Date: 2018-01-01
 Author: Yang Feng, Jingyi Jessica Li and Xin Tong
 Maintainer: Yang Feng <yang.feng@columbia.edu>
 Imports:
@@ -41,7 +41,7 @@ Description: In many binary classification applications, such as disease
     <arXiv:1608.03109>.
 License: GPL-2
 LazyData: TRUE
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
 URL: http://arxiv.org/abs/1608.03109
 Suggests:
     knitr,

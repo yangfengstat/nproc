@@ -119,7 +119,7 @@ npc <- function(x = NULL, y, method = c("logistic", "penlog", "svm", "randomfore
     method = match.arg(method)
     if(split.ratio == 'adaptive'){
       obj = find.optim.split(x = x, y = y, method = method, alpha = alpha, delta = delta, split = split, split.ratio.seq = seq(from=0.1,to=0.9,by=0.1), band  = band, randSeed = randSeed, warning = FALSE, ...)
-      split.ratio = obj$split.ratio.1se
+      split.ratio = obj$split.ratio.min
     }
 
     set.seed(randSeed)
