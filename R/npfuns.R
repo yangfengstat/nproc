@@ -44,7 +44,6 @@ find.optim.split <- function(x = NULL, y, method = c("logistic", "penlog", "svm"
    split.ratio.min = split.ratio.seq[loc.min]
    split.ratio.1se = split.ratio.seq[loc.1se]
    #optim.split.ratio = split.ratio.seq[which.min(errorm)]
-   rm(.Random.seed, envir=.GlobalEnv)
    list(split.ratio.min=split.ratio.min, split.ratio.1se = split.ratio.1se, error = error, errorse = errorse)
 }
 
